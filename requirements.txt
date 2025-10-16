@@ -1,5 +1,4 @@
 instaloader>=4.10.0
-instagrapi>=2.1.0
 pymongo>=4.6.0
 requests>=2.31.0
 python-dotenv>=1.0.0

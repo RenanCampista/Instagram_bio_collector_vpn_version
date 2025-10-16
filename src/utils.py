@@ -64,7 +64,7 @@ def connect_to_mongodb(connection_string: str, log: logging.Logger) -> MongoClie
     
 
 def get_profiles_from_db(collection: Collection, log: logging.Logger, limit: int = 500) -> list[str]:
-    """Fetches profiles from the MongoDB collection."""
+    """Fetches profiles from the MongoDB collection and marks them as processing."""
     try:
         log.info("Buscando perfis do banco de dados...")
         
@@ -78,11 +78,28 @@ def get_profiles_from_db(collection: Collection, log: logging.Logger, limit: int
         cursor = collection.aggregate(
             pipeline,
             maxTimeMS=60000,
-            allowDiskUse=True  # Permite usar disco se necessário para operações grandes
+            allowDiskUse=True
         )
         
         profiles = [doc["username"] for doc in cursor if "username" in doc]
         log.info(f"Buscados {len(profiles)} perfis aleatórios do banco de dados.")
+        
+        if profiles:
+            try:
+                update_operations = [
+                    UpdateOne(
+                        {"username": username},
+                        {
+                            "$set": {"status": "processing"},
+                            "$currentDate": {"updated_at": True}
+                        }
+                    )
+                    for username in profiles
+                ]
+                collection.bulk_write(update_operations, ordered=False)
+            except Exception as update_error:
+                log.error(f"Erro ao atualizar status para 'processing': {update_error}")
+        
         return profiles
     except errors.ExecutionTimeout as e:
         log.error(f"Timeout ao buscar perfis do banco de dados: {e}")

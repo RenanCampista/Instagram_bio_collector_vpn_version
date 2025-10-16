@@ -60,7 +60,7 @@ def main():
         pending_updates = []
         
         while True:
-            profiles = get_profiles_from_db(collection, log)
+            profiles = get_profiles_from_db(collection, log, 100)
             
             if not profiles:
                 log.info("Não há mais perfis para processar. Encerrando o script.")
